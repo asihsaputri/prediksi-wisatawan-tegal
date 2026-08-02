@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prediksi Wisatawan — Kabupaten Tegal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f5f3ee;
+      --surface:   #ffffff;
+      --border:    #e2ddd5;
+      --text:      #1a1714;
+      --muted:     #7a736a;
+      --accent:    #c0392b;
+      --accent2:   #e67e22;
+      --green:     #27ae60;
+      --blue:      #2980b9;
+      --card-bg:   #fdf9f5;
+      --radius:    12px;
+      --shadow:    0 2px 16px rgba(0,0,0,.07);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--text);
+      color: #fff;
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header .logo {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: grid; place-items: center;
+    }
+    header .logo svg { width: 20px; height: 20px; fill: #fff; }
+    header h1 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; font-weight: 400; letter-spacing: .3px; }
+    header span { font-size: .78rem; color: #aaa; margin-left: 8px; }
+
+    /* ── MAIN ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── UPLOAD CARD ── */
+    .upload-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 36px;
+    }
+    .upload-card h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.35rem;
+      font-weight: 400;
+      margin-bottom: 6px;
+    }
+    .upload-card p { font-size: .875rem; color: var(--muted); margin-bottom: 24px; }
+
+    .upload-row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .file-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-bg);
+      border: 1.5px dashed var(--border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: .875rem;
+      color: var(--muted);
+      transition: border-color .2s, color .2s;
+      flex: 1;
+      min-width: 220px;
+    }
+    .file-label:hover { border-color: var(--accent); color: var(--accent); }
+    .file-label svg { flex-shrink: 0; }
+    #file-input { display: none; }
+    #file-name { font-size: .82rem; color: var(--muted); margin-top: 6px; }
+
+    .btn-predict {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 32px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background .2s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn-predict:hover  { background: #a93226; }
+    .btn-predict:active { transform: scale(.97); }
+    .btn-predict:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* ── SPINNER ── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── ALERT ── */
+    .alert {
+      display: none;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: .875rem;
+      margin-top: 16px;
+    }
+    .alert.error   { background: #fde8e8; color: #9b1c1c; border-left: 3px solid var(--accent); }
+    .alert.success { background: #e8f5e9; color: #1b5e20; border-left: 3px solid var(--green); }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title .tag {
+      font-family: 'DM Sans', sans-serif;
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 8px;
+    }
+
+    /* ── CHART CARD ── */
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+      display: none;
+    }
+    .chart-wrap { position: relative; height: 380px; }
+
+    /* ── METRICS GRID ── */
+    .metrics-section { display: none; margin-bottom: 40px; }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 700px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform .2s;
+    }
+    .metric-card:hover { transform: translateY(-2px); }
+    .metric-header {
+      background: #fde8e8;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: .78rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      text-align: center;
+    }
+    .metric-val {
+      padding: 18px 16px;
+      text-align: center;
+      font-size: 1.45rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .metric-val small { display: block; font-size: .72rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
+
+    /* ── TABLE ── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      box-shadow: var(--shadow);
+      display: none;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    th { background: var(--card-bg); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+    td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--card-bg); }
+    .badge {
+      display: inline-block;
+      font-size: .7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .badge-sarima { background: #e8f4fd; color: #1a6696; }
+    .badge-hybrid { background: #fde8e8; color: #9b1c1c; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-state svg { opacity: .25; margin-bottom: 16px; }
+    .empty-state p { font-size: .9rem; }
+
+    /* ── LEGEND DOT ── */
+    .leg { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+  </div>
+  <h1>Prediksi Wisatawan <span>Hybrid SARIMA-LSTM</span></h1>
+</header>
+
+<main>
+
+  <!-- Upload Card -->
+  <div class="upload-card">
+    <h2>Unggah Data Kunjungan Wisatawan</h2>
+    <p>Upload file CSV dengan kolom tanggal (bulanan) dan jumlah kunjungan wisatawan.</p>
+    <div class="upload-row">
+      <label class="file-label" for="file-input">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span id="file-label-text">Pilih File CSV…</span>
+      </label>
+      <button class="btn-predict" id="btn-upload" onclick="uploadAndPredict()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btn-text">Proses &amp; Prediksi</span>
+      </button>
+    </div>
+    <div id="file-name"></div>
+    <div class="alert" id="alert"></div>
+    <input type="file" id="file-input" accept=".csv" onchange="onFileChange()"/>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" id="empty-state">
+    <svg width="80" height="80" viewBox="0 0 24 24" fill="var(--muted)"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    <p>Unggah file CSV untuk melihat prediksi kunjungan wisatawan.</p>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-card" id="chart-card">
+    <div class="section-title">
+      Prediksi Kunjungan Wisatawan
+      <span class="tag" id="chart-year-tag">2025</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="myChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics-section" id="metrics-section">
+    <div class="section-title">Akurasi Nilai Eror Model</div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">MAE</div>
+        <div class="metric-val" id="val-mae">—<small>Mean Absolute Error</small></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header">MSE</div>
+        <div class="metric-val" id="val-mse">—<small>Mean Squared Error</small></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header">RMSE</div>
+        <div class="metric-val" id="val-rmse">—<small>Root Mean Squared Error</small></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header">MAPE</div>
+        <div class="metric-val" id="val-mape">—<small>Mean Absolute Percentage Error</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card" id="table-card">
+    <div class="section-title" style="margin-bottom:16px;">Tabel Hasil Prediksi <span class="tag">Future</span></div>
+    <table id="pred-table">
+      <thead>
+        <tr>
+          <th>Bulan</th>
+          <th>SARIMA</th>
+          <th>Hybrid SARIMA-LSTM</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script>
+  let chartInstance = null;
+
+  function onFileChange() {
+    const input = document.getElementById('file-input');
+    const label = document.getElementById('file-label-text');
+    const fn    = document.getElementById('file-name');
+    if (input.files.length > 0) {
+      label.textContent = input.files[0].name;
+      fn.textContent = `Ukuran: ${(input.files[0].size / 1024).toFixed(1)} KB`;
+    }
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.textContent = msg;
+    el.className = `alert ${type}`;
+    el.style.display = 'block';
+  }
+
+  function setLoading(on) {
+    document.getElementById('spinner').style.display = on ? 'block' : 'none';
+    document.getElementById('btn-text').textContent   = on ? 'Memproses…' : 'Proses & Prediksi';
+    document.getElementById('btn-upload').disabled    = on;
+  }
+
+  async function uploadAndPredict() {
+    const input = document.getElementById('file-input');
+    document.getElementById('alert').style.display = 'none';
+
+    if (!input.files.length) {
+      showAlert('Silakan pilih file CSV terlebih dahulu.', 'error'); return;
+    }
+
+    setLoading(true);
+    const fd = new FormData();
+    fd.append('file', input.files[0]);
+
+    try {
+      const res  = await fetch('/predict', { method: 'POST', body: fd });
+      const json = await res.json();
+
+      if (!res.ok || json.error) {
+        showAlert(json.error || 'Terjadi kesalahan.', 'error');
+        setLoading(false); return;
+      }
+
+      showAlert('Data berhasil diproses!', 'success');
+      renderAll(json.data);
+    } catch (e) {
+      showAlert('Gagal terhubung ke server: ' + e.message, 'error');
+    }
+    setLoading(false);
+  }
+
+  function fmt(n) { return Math.round(n).toLocaleString('id-ID'); }
+
+  function renderAll(d) {
+    document.getElementById('empty-state').style.display = 'none';
+
+    // ── Year tag
+    const yr = d.future_year || new Date().getFullYear() + 1;
+    document.getElementById('chart-year-tag').textContent = yr;
+
+    // ── Metrics
+    const m = d.metrics;
+    document.getElementById('val-mae').innerHTML  = `${fmt(m.mae)}<small>Mean Absolute Error</small>`;
+    document.getElementById('val-mse').innerHTML  = `${fmt(m.mse)}<small>Mean Squared Error</small>`;
+    document.getElementById('val-rmse').innerHTML = `${fmt(m.rmse)}<small>Root Mean Squared Error</small>`;
+    document.getElementById('val-mape').innerHTML = `${m.mape.toFixed(2)}%<small>Mean Absolute Percentage Error</small>`;
+    document.getElementById('metrics-section').style.display = 'block';
+
+    // ── Chart
+    const allDates = [
+      ...d.historis.dates,
+      ...d.testing.dates,
+      ...d.hybrid_future.dates
+    ].filter((v, i, a) => a.indexOf(v) === i).sort();
+
+    function buildSparse(dates, values) {
+      const map = {};
+      dates.forEach((d, i) => { map[d] = values[i]; });
+      return allDates.map(d => map[d] !== undefined ? map[d] : null);
+    }
+
+    const datasets = [
+      {
+        label: 'Data Historis',
+        data: buildSparse(d.historis.dates, d.historis.values),
+        borderColor: '#2980b9',
+        backgroundColor: 'rgba(41,128,185,.08)',
+        borderWidth: 2.5,
+        pointRadius: 3,
+        tension: .3,
+        spanGaps: false,
+      },
+      {
+        label: 'Hybrid (Testing)',
+        data: buildSparse(d.testing.dates, d.testing.values),
+        borderColor: '#e67e22',
+        borderDash: [6, 3],
+        borderWidth: 2,
+        pointRadius: 3,
+        tension: .3,
+        spanGaps: false,
+      },
+      {
+        label: 'SARIMA (Future)',
+        data: buildSparse(d.sarima_future.dates, d.sarima_future.values),
+        borderColor: '#27ae60',
+        borderDash: [4, 4],
+        borderWidth: 2,
+        pointRadius: 3,
+        tension: .3,
+        spanGaps: false,
+      },
+      {
+        label: 'Hybrid SARIMA-LSTM (Future)',
+        data: buildSparse(d.hybrid_future.dates, d.hybrid_future.values),
+        borderColor: '#c0392b',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: .3,
+        spanGaps: false,
+      },
+    ];
+
+    document.getElementById('chart-card').style.display = 'block';
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(document.getElementById('myChart'), {
+      type: 'line',
+      data: { labels: allDates, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { font: { family: 'DM Sans', size: 12 }, usePointStyle: true, pointStyleWidth: 20 }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.raw !== null ? fmt(ctx.raw) : '-'}`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: '#f0ede8' }, ticks: { font: { family: 'DM Sans', size: 11 }, maxRotation: 45 } },
+          y: {
+            grid: { color: '#f0ede8' },
+            ticks: { font: { family: 'DM Sans', size: 11 }, callback: v => fmt(v) },
+            title: { display: true, text: 'Jumlah Wisatawan', font: { family: 'DM Sans', size: 12 } }
+          }
+        }
+      }
+    });
+
+    // ── Table
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = '';
+    d.hybrid_future.dates.forEach((dt, i) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${dt}</td>
+        <td><span class="badge badge-sarima">${fmt(d.sarima_future.values[i])}</span></td>
+        <td><span class="badge badge-hybrid">${fmt(d.hybrid_future.values[i])}</span></td>
+      `;
+      tbody.appendChild(row);
+    });
+    document.getElementById('table-card').style.display = 'block';
+  }
+</script>
+</body>
+</html>
