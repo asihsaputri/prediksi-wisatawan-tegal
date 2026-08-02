@@ -32,7 +32,7 @@
       min-height: 100vh;
     }
 
-    /* ── HEADER ── */
+    /* HEADER */
     header {
       background: var(--text);
       color: #fff;
@@ -251,9 +251,6 @@
 <body>
 
 <header>
-  <div class="logo">
-    <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
-  </div>
   <h1>Prediksi Wisatawan <span>Hybrid SARIMA-LSTM</span></h1>
 </header>
 
@@ -288,44 +285,70 @@
   <div class="chart-card" id="chart-card">
     <div class="section-title">
       Prediksi Kunjungan Wisatawan
-      <span class="tag" id="chart-year-tag">2025</span>
+      <span class="tag" id="chart-year-tag">2026</span>
     </div>
     <div class="chart-wrap">
       <canvas id="myChart"></canvas>
     </div>
   </div>
 
-  <!-- Metrics -->
-  <div class="metrics-section" id="metrics-section">
-    <div class="section-title">Akurasi Nilai Eror Model</div>
+  <!-- Metrics: SARIMA (hidden sampai data diproses) -->
+  <div class="metrics-section" id="sarima-metrics-section">
+    <div class="section-title" style="margin-bottom:10px">
+      Nilai Eror Model SARIMA
+    </div>
     <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-header">MAE</div>
-        <div class="metric-val" id="val-mae">—<small>Mean Absolute Error</small></div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-header">MSE</div>
-        <div class="metric-val" id="val-mse">—<small>Mean Squared Error</small></div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-header">RMSE</div>
-        <div class="metric-val" id="val-rmse">—<small>Root Mean Squared Error</small></div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-header">MAPE</div>
-        <div class="metric-val" id="val-mape">—<small>Mean Absolute Percentage Error</small></div>
-      </div>
+        <div class="metric-card">
+            <div class="metric-header">MAE</div>
+            <div class="metric-val" id="sarima-mae">-</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-header">MSE</div>
+            <div class="metric-val" id="sarima-mse">-</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-header">RMSE</div>
+            <div class="metric-val" id="sarima-rmse">-</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-header">MAPE</div>
+            <div class="metric-val" id="sarima-mape">-</div>
+        </div>
+    </div>
+  </div>
+
+  <!-- Metrics: Hybrid (hidden sampai data diproses) -->
+  <div class="metrics-section" id="hybrid-metrics-section">
+    <div class="section-title" style="margin-bottom:10px">
+      Nilai Eror Model Hybrid SARIMA-LSTM
+    </div>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-header">MAE</div>
+            <div class="metric-val" id="hybrid-mae">-</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-header">MSE</div>
+            <div class="metric-val" id="hybrid-mse">-</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-header">RMSE</div>
+            <div class="metric-val" id="hybrid-rmse">-</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-header">MAPE</div>
+            <div class="metric-val" id="hybrid-mape">-</div>
+        </div>
     </div>
   </div>
 
   <!-- Table -->
   <div class="table-card" id="table-card">
-    <div class="section-title" style="margin-bottom:16px;">Tabel Hasil Prediksi <span class="tag">Future</span></div>
+    <div class="section-title" style="margin-bottom:16px;">Tabel Hasil Prediksi <span class="tag">2026</span></div>
     <table id="pred-table">
       <thead>
         <tr>
           <th>Bulan</th>
-          <th>SARIMA</th>
           <th>Hybrid SARIMA-LSTM</th>
         </tr>
       </thead>
@@ -392,6 +415,14 @@
 
   function fmt(n) { return Math.round(n).toLocaleString('id-ID'); }
 
+  // Format 2 angka di belakang koma, gaya Indonesia (mis. 0,22)
+  function fmtDec(n) {
+    return Number(n).toLocaleString('id-ID', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
   function renderAll(d) {
     document.getElementById('empty-state').style.display = 'none';
 
@@ -399,20 +430,39 @@
     const yr = d.future_year || new Date().getFullYear() + 1;
     document.getElementById('chart-year-tag').textContent = yr;
 
+    // ── Tampilkan section metrik (disembunyikan sebelum upload)
+    document.getElementById('sarima-metrics-section').style.display = 'block';
+    document.getElementById('hybrid-metrics-section').style.display = 'block';
+
     // ── Metrics
-    const m = d.metrics;
-    document.getElementById('val-mae').innerHTML  = `${fmt(m.mae)}<small>Mean Absolute Error</small>`;
-    document.getElementById('val-mse').innerHTML  = `${fmt(m.mse)}<small>Mean Squared Error</small>`;
-    document.getElementById('val-rmse').innerHTML = `${fmt(m.rmse)}<small>Root Mean Squared Error</small>`;
-    document.getElementById('val-mape').innerHTML = `${m.mape.toFixed(2)}%<small>Mean Absolute Percentage Error</small>`;
-    document.getElementById('metrics-section').style.display = 'block';
+    const sarima = d.sarima_metrics;
+    const hybrid = d.hybrid_metrics;
+    // SARIMA
+    document.getElementById("sarima-mae").innerHTML =
+    `${fmtDec(sarima.mae)}<small>Mean Absolute Error</small>`;
+    document.getElementById("sarima-mse").innerHTML =
+    `${fmtDec(sarima.mse)}<small>Mean Squared Error</small>`;
+    document.getElementById("sarima-rmse").innerHTML =
+    `${fmtDec(sarima.rmse)}<small>Root Mean Squared Error</small>`;
+    document.getElementById("sarima-mape").innerHTML =
+    `${fmtDec(sarima.mape)}%<small>Mean Absolute Percentage Error</small>`;
+
+    // HYBRID
+    document.getElementById("hybrid-mae").innerHTML =
+    `${fmtDec(hybrid.mae)}<small>Mean Absolute Error</small>`;
+    document.getElementById("hybrid-mse").innerHTML =
+    `${fmtDec(hybrid.mse)}<small>Mean Squared Error</small>`;
+    document.getElementById("hybrid-rmse").innerHTML =
+    `${fmtDec(hybrid.rmse)}<small>Root Mean Squared Error</small>`;
+    document.getElementById("hybrid-mape").innerHTML =
+    `${fmtDec(hybrid.mape)}%<small>Mean Absolute Percentage Error</small>`;
 
     // ── Chart
     const allDates = [
-      ...d.historis.dates,
-      ...d.testing.dates,
-      ...d.hybrid_future.dates
-    ].filter((v, i, a) => a.indexOf(v) === i).sort();
+    ...d.historis.dates,
+    ...d.testing_actual.dates,
+    ...d.future_hybrid.dates
+].filter((v,i,a)=>a.indexOf(v)===i).sort();
 
     function buildSparse(dates, values) {
       const map = {};
@@ -421,47 +471,58 @@
     }
 
     const datasets = [
-      {
-        label: 'Data Historis',
-        data: buildSparse(d.historis.dates, d.historis.values),
-        borderColor: '#2980b9',
-        backgroundColor: 'rgba(41,128,185,.08)',
-        borderWidth: 2.5,
-        pointRadius: 3,
-        tension: .3,
-        spanGaps: false,
-      },
-      {
-        label: 'Hybrid (Testing)',
-        data: buildSparse(d.testing.dates, d.testing.values),
-        borderColor: '#e67e22',
-        borderDash: [6, 3],
-        borderWidth: 2,
-        pointRadius: 3,
-        tension: .3,
-        spanGaps: false,
-      },
-      {
-        label: 'SARIMA (Future)',
-        data: buildSparse(d.sarima_future.dates, d.sarima_future.values),
-        borderColor: '#27ae60',
-        borderDash: [4, 4],
-        borderWidth: 2,
-        pointRadius: 3,
-        tension: .3,
-        spanGaps: false,
-      },
-      {
-        label: 'Hybrid SARIMA-LSTM (Future)',
-        data: buildSparse(d.hybrid_future.dates, d.hybrid_future.values),
-        borderColor: '#c0392b',
-        borderWidth: 2.5,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        tension: .3,
-        spanGaps: false,
-      },
-    ];
+
+{
+    label: 'Data Historis',
+    data: buildSparse(d.historis.dates, d.historis.values),
+    borderColor: '#2980b9',
+    backgroundColor: 'rgba(41,128,185,.08)',
+    borderWidth: 2.5,
+    pointRadius: 3,
+    tension: .3,
+},
+
+{
+    label: 'Data Testing',
+    data: buildSparse(d.testing_actual.dates, d.testing_actual.values),
+    borderColor: '#f39c12',
+    borderDash: [6,3],
+    borderWidth: 2,
+    pointRadius: 3,
+    tension: .3,
+},
+
+{
+    label: 'Prediksi SARIMA (Testing)',
+    data: buildSparse(d.testing_sarima.dates, d.testing_sarima.values),
+    borderColor: '#27ae60',
+    borderDash: [4,4],
+    borderWidth: 2,
+    pointRadius: 3,
+    tension: .3,
+},
+
+{
+    label: 'Prediksi Hybrid SARIMA-LSTM (Testing)',
+    data: buildSparse(d.testing_hybrid.dates, d.testing_hybrid.values),
+    borderColor: '#c0392b',
+    borderWidth: 3,
+    pointRadius: 4,
+    tension: .3,
+},
+
+{
+    label: 'Prediksi Hybrid SARIMA-LSTM (12 Bulan)',
+    data: buildSparse(d.future_hybrid.dates, d.future_hybrid.values),
+    borderColor: '#8e44ad',
+    borderWidth: 3,
+    pointRadius: 4,
+    tension: .3,
+}
+];
+
+    const ZOOM_FROM_YEAR = 2023;
+    const zoomStartLabel = allDates.find(d => parseInt(d.slice(0, 4), 10) >= ZOOM_FROM_YEAR);
 
     document.getElementById('chart-card').style.display = 'block';
     if (chartInstance) chartInstance.destroy();
@@ -484,7 +545,11 @@
           }
         },
         scales: {
-          x: { grid: { color: '#f0ede8' }, ticks: { font: { family: 'DM Sans', size: 11 }, maxRotation: 45 } },
+          x: {
+            grid: { color: '#f0ede8' },
+            ticks: { font: { family: 'DM Sans', size: 11 }, maxRotation: 45 },
+            min: zoomStartLabel || undefined
+          },
           y: {
             grid: { color: '#f0ede8' },
             ticks: { font: { family: 'DM Sans', size: 11 }, callback: v => fmt(v) },
@@ -494,14 +559,13 @@
       }
     });
 
-    // ── Table
+    //  Table 
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
     d.hybrid_future.dates.forEach((dt, i) => {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${dt}</td>
-        <td><span class="badge badge-sarima">${fmt(d.sarima_future.values[i])}</span></td>
         <td><span class="badge badge-hybrid">${fmt(d.hybrid_future.values[i])}</span></td>
       `;
       tbody.appendChild(row);
